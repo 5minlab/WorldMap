@@ -15,6 +15,10 @@
       .stage { position:relative; }
       canvas { display:block; width:100%; height:auto; background: radial-gradient(1200px 600px at 50% 50%, #0f2a45, #0a1a2b 70%); border-radius: 10px; }
       .hud { position:absolute; inset: 8px auto auto 8px; background: rgba(7,18,28,0.7); border: 1px solid #173a5a; border-radius: 8px; padding:8px 10px; font-size: 13px; pointer-events:none; min-width: 220px; }
+      .status { position:absolute; left:8px; top:48px; display:flex; gap:6px; pointer-events:none; }
+      .badge { padding:2px 6px; border-radius:999px; font-size:11px; border:1px solid #224; background:#0c1e2f; color:#cfe6ff; opacity:0.9; }
+      .badge.ok { background:#0e3a20; color:#bff5c5; border-color:#1f6a39; }
+      .badge.fail { background:#3a1212; color:#ffc0c0; border-color:#6a1f1f; }
     </style>
     <script src="../vendor/d3.v7.min.js"></script>
     <script src="../vendor/topojson-client.v3.min.js"></script>
@@ -29,6 +33,7 @@
         <div class="stage">
           <canvas id="globe" width="900" height="900" aria-label="110m 국가 경계와 수도 표시 지구본" role="img"></canvas>
           <div id="hud" class="hud">좌클릭: 국가 선택 · 휠: 확대/축소</div>
+          <div id="status" class="status"></div>
         </div>
       </div>
     </div>
