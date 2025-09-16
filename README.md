@@ -8,4 +8,4 @@
 
 로컬에서 열기: 파일을 브라우저로 직접 열거나 간단 서버를 사용하세요.
 
-- Python: `python -m http.server 8000` → http://localhost:8000/docs/
+- Python: `python -m http.server 8000` → http://localhost:8000/docs/globe2/
