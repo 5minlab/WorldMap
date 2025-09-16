@@ -29,7 +29,24 @@ function drawCoastline(){ if(!landGeom) return; ctx.beginPath(); path(landGeom);
 function drawBoundaries(){ if(!boundaryMesh && !features.length) return; ctx.beginPath(); if(boundaryMesh) path(boundaryMesh); else features.forEach(f=>path(f)); ctx.strokeStyle=colors.boundary; ctx.lineWidth=0.9*DPR; ctx.stroke(); }
 function drawSelection(){ if(!selected) return; ctx.save(); ctx.beginPath(); path(selected); ctx.fillStyle=colors.selectedFill; ctx.fill(); ctx.beginPath(); path(selected); ctx.clip(); ctx.beginPath(); if(boundaryMesh) path(boundaryMesh); ctx.strokeStyle=colors.selectedEdge; ctx.lineWidth=2*DPR; ctx.stroke(); ctx.restore(); }
 function drawStarPath(cx,cy,outer,inner,p=5){ const step=Math.PI/p; ctx.beginPath(); for(let i=0;i<p*2;i++){ const r=i%2===0?outer:inner; const a=i*step-Math.PI/2; const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.closePath(); }
-function drawCapitals(){ ctx.save(); capitals.forEach(c=>{ const p=projection([c.lon,c.lat]); if(!p) return; const [x,y]=p; const outer=50*DPR, inner=25*DPR; drawStarPath(x,y,outer,inner,5); ctx.fillStyle=colors.capital; ctx.strokeStyle=colors.capitalEdge; ctx.lineWidth=Math.max(0.8*DPR, outer*0.25); ctx.fill(); ctx.stroke(); }); ctx.restore(); }
+function drawCapitals(){
+  if(!capitals || !capitals.length) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  capitals.forEach(c=>{
+    const p=projection([c.lon,c.lat]);
+    if(!p) return; // back side
+    const [x,y]=p;
+    const outer=50*DPR, inner=25*DPR;
+    // star
+    drawStarPath(x,y,outer,inner,5);
+    ctx.fillStyle=colors.capital; ctx.strokeStyle=colors.capitalEdge; ctx.lineWidth=Math.max(0.8*DPR, outer*0.25);
+    ctx.fill(); ctx.stroke();
+    // fallback dot for visibility
+    ctx.beginPath(); ctx.arc(x,y,3*DPR,0,Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill();
+  });
+  ctx.restore();
+}
 
 function render(){ fitProjection(); clear(); drawSphere(); drawGraticule(); drawLandFill(); drawBoundaries(); drawCoastline(); drawSelection(); drawCapitals(); }
 function loop(){ if(needsRender){ render(); needsRender=false;} requestAnimationFrame(loop); } requestAnimationFrame(loop);
