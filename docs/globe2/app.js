@@ -3,7 +3,7 @@ const canvas = document.getElementById('globe');
 const ctx = canvas.getContext('2d');
 const DPR = Math.max(1, window.devicePixelRatio || 1);
 
-const colors = { ocean:'#0b4da2', graticule:'rgba(160,200,255,0.15)', boundary:'#9e9e9e', selectedFill:'rgba(46,141,239,0.45)', selectedEdge:'#bfe1ff', capital:'#ffd166', capitalEdge:'#ffffff' };
+const colors = { bg:'#9e9e9e', ocean:'#0b4da2', graticule:'rgba(160,200,255,0.15)', boundary:'#9e9e9e', selectedFill:'rgba(46,141,239,0.45)', selectedEdge:'#bfe1ff', capital:'#ffd166', capitalEdge:'#ffffff' };
 
 let needsRender = true;
 function resizeCanvas(){ const rect=canvas.getBoundingClientRect(); canvas.width=Math.max(2,Math.round(rect.width*DPR)); canvas.height=canvas.width; needsRender=true; }
@@ -21,7 +21,8 @@ let selected=null; let isDragging=false; let lastPos=[0,0]; let lastRotate=[0,0,
 let zoom=1; const ZOOM_MIN=0.5, ZOOM_MAX=6, ZOOM_RESP=0.0016, DRAG_EXP=1;
 
 function fitProjection(){ const w=canvas.width,h=canvas.height; const scale=Math.min(w,h)*0.47*zoom; projection.translate([w/2,h/2]).scale(scale); }
-function clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle=colors.ocean; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.lineJoin='round'; ctx.lineCap='round'; }
+function clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle=colors.bg; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.lineJoin='round'; ctx.lineCap='round'; }
+function drawSphere(){ ctx.beginPath(); path({type:'Sphere'}); ctx.fillStyle=colors.ocean; ctx.fill(); }
 function drawGraticule(){ ctx.beginPath(); path(graticule); ctx.strokeStyle=colors.graticule; ctx.lineWidth=1*DPR; ctx.stroke(); }
 function drawLandFill(){ if(!landGeom) return; ctx.beginPath(); path(landGeom); ctx.fillStyle='#000000'; ctx.fill(); }
 function drawCoastline(){ if(!landGeom) return; ctx.beginPath(); path(landGeom); ctx.strokeStyle='#4a7fb5'; ctx.lineWidth=1.2*DPR; ctx.stroke(); }
@@ -30,7 +31,7 @@ function drawSelection(){ if(!selected) return; ctx.save(); ctx.beginPath(); pat
 function drawStarPath(cx,cy,outer,inner,p=5){ const step=Math.PI/p; ctx.beginPath(); for(let i=0;i<p*2;i++){ const r=i%2===0?outer:inner; const a=i*step-Math.PI/2; const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.closePath(); }
 function drawCapitals(){ ctx.save(); capitals.forEach(c=>{ const p=projection([c.lon,c.lat]); if(!p) return; const [x,y]=p; const outer=50*DPR, inner=25*DPR; drawStarPath(x,y,outer,inner,5); ctx.fillStyle=colors.capital; ctx.strokeStyle=colors.capitalEdge; ctx.lineWidth=Math.max(0.8*DPR, outer*0.25); ctx.fill(); ctx.stroke(); }); ctx.restore(); }
 
-function render(){ fitProjection(); clear(); drawGraticule(); drawLandFill(); drawBoundaries(); drawCoastline(); drawSelection(); drawCapitals(); }
+function render(){ fitProjection(); clear(); drawSphere(); drawGraticule(); drawLandFill(); drawBoundaries(); drawCoastline(); drawSelection(); drawCapitals(); }
 function loop(){ if(needsRender){ render(); needsRender=false;} requestAnimationFrame(loop); } requestAnimationFrame(loop);
 function setHud(t){ document.getElementById('hud').textContent=t; }
 
@@ -87,4 +88,3 @@ async function loadData(){
 
 setHud('데이터 불러오는 중...');
 loadData().catch(err=>{ console.error(err); setHud('데이터 로드 실패: docs/globe/data/ 확인 또는 네트워크 확인'); });
-
