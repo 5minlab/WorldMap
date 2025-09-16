@@ -253,9 +253,9 @@
         if (selected) {
           const id = String(selected.id || '').padStart(3,'0');
           const propName = (selected.properties && (selected.properties.name || selected.properties.ADMIN || selected.properties.admin)) || '';
-          const name = propName || nameByCcn3.get(id) || '援??';
+          const name = propName || nameByCcn3.get(id) || '국가';
           const cap = capByCcn3.get(id) || null;
-          if (cap) setHud(`${name} ???섎룄: ${cap.capital}`);
+          if (cap) setHud(`${name} — 수도: ${cap.capital}`);
           else setHud(`${name}`);
           needsRender = true;
           return;
@@ -266,7 +266,7 @@
           if (cap) setHud(`${cap.name} ???섎룄: ${cap.capital}`);
           else setHud(`援?? 肄붾뱶 ${id}`);
         } else {
-          setHud('醫뚰겢由? 援?? ?좏깮 쨌 ?? ?뺣?/異뺤냼');
+          setHud('좌클릭: 국가 선택 · 휠: 확대/축소');
         }
         needsRender = true;
       });
