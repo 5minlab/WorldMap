@@ -175,19 +175,29 @@
       }
 
       function drawCapitals() {
+        if (!capitals || !capitals.length) return;
         ctx.save();
         capitals.forEach(c => {
           const p = projection([c.lon, c.lat]);
-          if (!p) return;
+          if (!p) return; // back side
           const [x,y] = p;
-          // size scales gently with zoom, clamped for readability
-          const outer = 50*DPR; const inner = 25*DPR;
+          // fixed ~10px diameter (DPR aware)
+          const outer = 5 * DPR; const inner = 2.5 * DPR;
+          // slight glow for visibility
+          ctx.shadowColor = '#000000';
+          ctx.shadowBlur = 2 * DPR;
           drawStarPath(x, y, outer, inner, 5);
           ctx.fillStyle = colors.capital;      // gold fill
           ctx.strokeStyle = colors.capitalEdge;// white edge
           ctx.lineWidth = Math.max(0.8*DPR, outer*0.25);
           ctx.fill();
           ctx.stroke();
+          // fallback white dot to ensure visibility
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.arc(x, y, 2 * DPR, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
         });
         ctx.restore();
       }
