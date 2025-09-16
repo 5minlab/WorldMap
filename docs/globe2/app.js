@@ -1,4 +1,4 @@
-// UTF-8 Korean-safe globe v2
+﻿// UTF-8 Korean-safe globe v2
 const canvas = document.getElementById('globe');
 const ctx = canvas.getContext('2d');
 const DPR = Math.max(1, window.devicePixelRatio || 1);
@@ -37,7 +37,7 @@ function drawCapitals(){
     const p=projection([c.lon,c.lat]);
     if(!p) return; // back side
     const [x,y]=p;
-    const outer=50*DPR, inner=25*DPR;
+    const outer=5*DPR, inner=2.5*DPR;
     // star
     drawStarPath(x,y,outer,inner,5);
     ctx.fillStyle=colors.capital; ctx.strokeStyle=colors.capitalEdge; ctx.lineWidth=Math.max(0.8*DPR, outer*0.25);
@@ -105,3 +105,4 @@ async function loadData(){
 
 setHud('데이터 불러오는 중...');
 loadData().catch(err=>{ console.error(err); setHud('데이터 로드 실패: docs/globe/data/ 확인 또는 네트워크 확인'); });
+
