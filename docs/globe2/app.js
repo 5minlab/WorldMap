@@ -74,3 +74,4 @@ async function loadData(){ const st={boundary:false, land:false, capitals:false}
 
 setHud('데이터 불러오는 중...');
 loadData().catch(err=>{ console.error(err); setHud('데이터 로드 실패: docs/globe/data/ 확인 또는 네트워크 확인'); });
+
