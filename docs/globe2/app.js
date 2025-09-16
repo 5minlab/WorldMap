@@ -79,14 +79,30 @@ canvas.addEventListener('click', ev=>{ if(ev.button!==0) return; const rect=canv
 
 async function loadData(){
   async function fetchWithFallback(urls){ let last; for(const u of urls){ try{ const r=await fetch(u,{cache:'force-cache'}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }catch(e){ last=e; } } throw last||new Error('모든 소스에서 로드 실패'); }
-  const topo = await fetchWithFallback(['../globe/data/countries-110m.json','https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json']);
+  const topo = await fetchWithFallback([
+    '../globe/data/countries-110m.json',
+    '/docs/globe/data/countries-110m.json',
+    window.location.origin + '/docs/globe/data/countries-110m.json',
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+  ]);
   if(topo?.objects?.countries){ features=topojson.feature(topo, topo.objects.countries).features; boundaryMesh=topojson.mesh(topo, topo.objects.countries, (a,b)=>a!==b); }
   else if(Array.isArray(topo?.features)){ features=topo.features; boundaryMesh=null; }
   else { throw new Error('countries data not found'); }
-  const landTopo = await fetchWithFallback(['../globe/data/land-110m.json','https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json']);
+  const landTopo = await fetchWithFallback([
+    '../globe/data/land-110m.json',
+    '/docs/globe/data/land-110m.json',
+    window.location.origin + '/docs/globe/data/land-110m.json',
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json'
+  ]);
   if(landTopo?.objects?.land){ landGeom=topojson.feature(landTopo, landTopo.objects.land);} else if(landTopo?.type==='FeatureCollection'){ landGeom=landTopo; }
 
-  const rows = await fetchWithFallback(['../globe/data/countries.json','https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json','https://raw.githubusercontent.com/mledoze/countries/master/countries.json']);
+  const rows = await fetchWithFallback([
+    '../globe/data/countries.json',
+    '/docs/globe/data/countries.json',
+    window.location.origin + '/docs/globe/data/countries.json',
+    'https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json',
+    'https://raw.githubusercontent.com/mledoze/countries/master/countries.json'
+  ]);
   capitals=[]; nameByCcn3.clear(); capByCcn3.clear();
   rows.forEach(row=>{
     const ccn3=row.ccn3||''; if(!ccn3) return; const id3=String(ccn3).padStart(3,'0');

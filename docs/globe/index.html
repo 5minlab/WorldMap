@@ -297,10 +297,14 @@
 
         const topo = await fetchWithFallback([
           './data/countries-110m.json',
+          '/docs/globe/data/countries-110m.json',
+          window.location.origin + '/docs/globe/data/countries-110m.json',
           'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
         ]);
         const landTopo = await fetchWithFallback([
           './data/land-110m.json',
+          '/docs/globe/data/land-110m.json',
+          window.location.origin + '/docs/globe/data/land-110m.json',
           'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json'
         ]);
         // countries: handle TopoJSON or GeoJSON
@@ -322,6 +326,8 @@
 
         const rows = await fetchWithFallback([
           './data/countries.json',
+          '/docs/globe/data/countries.json',
+          window.location.origin + '/docs/globe/data/countries.json',
           'https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json',
           'https://raw.githubusercontent.com/mledoze/countries/master/countries.json'
         ]);
