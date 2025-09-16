@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>지구본 v2 — 110m 경계 + 수도</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body { background:#0b1b2b; color:#eaf2ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+      .wrap { display:grid; place-items:center; height:100%; padding: 12px; box-sizing: border-box; }
+      .card { background:#0e2438; border:1px solid #143a5a; border-radius:12px; padding:12px; width:min(100%, 980px); box-shadow:0 12px 32px rgba(0,0,0,0.35); }
+      .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+      .title { font-weight:700; color:#def; }
+      .meta { font-size:12px; color:#9fc1ff; opacity:0.85; }
+      .stage { position:relative; }
+      canvas { display:block; width:100%; height:auto; background: radial-gradient(1200px 600px at 50% 50%, #0f2a45, #0a1a2b 70%); border-radius: 10px; }
+      .hud { position:absolute; inset: 8px auto auto 8px; background: rgba(7,18,28,0.7); border: 1px solid #173a5a; border-radius: 8px; padding:8px 10px; font-size: 13px; pointer-events:none; min-width: 220px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="head">
+          <div class="title">지구본 v2 (110m 경계 · 드래그 회전 · 휠 줌 · 수도 ★)</div>
+          <div class="meta">한국어 표기 · 로컬 데이터 우선</div>
+        </div>
+        <div class="stage">
+          <canvas id="globe" width="900" height="900" aria-label="110m 국가 경계와 수도 표시 지구본" role="img"></canvas>
+          <div id="hud" class="hud">좌클릭: 국가 선택 · 휠: 확대/축소</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+  </html>
+
