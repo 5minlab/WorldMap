@@ -29,6 +29,7 @@ const graticule = d3.geoGraticule10();
 
 let features = [];
 let boundaryMesh = null;
+let landGeom = null; // for land fill + coastline
 let capitals = [];
 const nameByCcn3 = new Map();
 const capByCcn3 = new Map();
@@ -45,12 +46,14 @@ function fitProjection(){ const w=canvas.width,h=canvas.height; const scale=Math
 function clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle=colors.ocean; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.lineJoin='round'; ctx.lineCap='round'; }
 
 function drawGraticule(){ ctx.beginPath(); path(graticule); ctx.strokeStyle=colors.graticule; ctx.lineWidth=1*DPR; ctx.stroke(); }
+function drawLandFill(){ if(!landGeom) return; ctx.beginPath(); path(landGeom); ctx.fillStyle = '#000000'; ctx.fill(); }
+function drawCoastline(){ if(!landGeom) return; ctx.beginPath(); path(landGeom); ctx.strokeStyle = '#4a7fb5'; ctx.lineWidth = 1.2*DPR; ctx.stroke(); }
 function drawBoundaries(){ if(!boundaryMesh && !features.length) return; ctx.beginPath(); if(boundaryMesh) path(boundaryMesh); else features.forEach(f=>path(f)); ctx.strokeStyle=colors.boundary; ctx.lineWidth=0.9*DPR; ctx.stroke(); }
 function drawSelection(){ if(!selected) return; ctx.save(); ctx.beginPath(); path(selected); ctx.fillStyle=colors.selectedFill; ctx.fill(); ctx.beginPath(); path(selected); ctx.clip(); ctx.beginPath(); if(boundaryMesh) path(boundaryMesh); ctx.strokeStyle=colors.selectedEdge; ctx.lineWidth=2*DPR; ctx.stroke(); ctx.restore(); }
 function drawStarPath(cx,cy,outer,inner,p=5){ const step=Math.PI/p; ctx.beginPath(); for(let i=0;i<p*2;i++){ const r=i%2===0?outer:inner; const a=i*step-Math.PI/2; const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.closePath(); }
 function drawCapitals(){ ctx.save(); capitals.forEach(c=>{ const p=projection([c.lon,c.lat]); if(!p) return; const [x,y]=p; const outer=50*DPR, inner=25*DPR; drawStarPath(x,y,outer,inner,5); ctx.fillStyle=colors.capital; ctx.strokeStyle=colors.capitalEdge; ctx.lineWidth=Math.max(0.8*DPR, outer*0.25); ctx.fill(); ctx.stroke(); }); ctx.restore(); }
 
-function render(){ fitProjection(); clear(); drawGraticule(); drawBoundaries(); drawSelection(); drawCapitals(); }
+function render(){ fitProjection(); clear(); drawGraticule(); drawLandFill(); drawBoundaries(); drawCoastline(); drawSelection(); drawCapitals(); }
 function loop(){ if(needsRender){ render(); needsRender=false; } requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
 
@@ -97,6 +100,12 @@ async function loadData(){
   if(topo?.objects?.countries){ features=d3.geoPath ? topojson.feature(topo, topo.objects.countries).features : []; boundaryMesh=topojson.mesh(topo, topo.objects.countries, (a,b)=>a!==b); }
   else if(Array.isArray(topo?.features)){ features=topo.features; boundaryMesh=null; }
   else { throw new Error('countries data not found'); }
+  const landTopo = await fetchWithFallback([
+    '../globe/data/land-110m.json',
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json'
+  ]);
+  if (landTopo?.objects?.land) { landGeom = topojson.feature(landTopo, landTopo.objects.land); }
+  else if (landTopo?.type === 'FeatureCollection') { landGeom = landTopo; }
 
   const rows = await fetchWithFallback([
     '../globe/data/countries.json',
@@ -121,4 +130,3 @@ async function loadData(){
 
 setHud('데이터 불러오는 중...');
 loadData().catch(err=>{ console.error(err); setHud('데이터 로드 실패: docs/globe/data/ 확인 또는 네트워크 확인'); });
-
