@@ -81,6 +81,7 @@ async function loadData(){
   async function fetchWithFallback(urls){ let last; for(const u of urls){ try{ const r=await fetch(u,{cache:'force-cache'}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }catch(e){ last=e; } } throw last||new Error('모든 소스에서 로드 실패'); }
   const topo = await fetchWithFallback([
     '../globe/data/countries-110m.json',
+    '/globe/data/countries-110m.json',
     '/docs/globe/data/countries-110m.json',
     window.location.origin + '/docs/globe/data/countries-110m.json',
     'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
@@ -90,6 +91,7 @@ async function loadData(){
   else { throw new Error('countries data not found'); }
   const landTopo = await fetchWithFallback([
     '../globe/data/land-110m.json',
+    '/globe/data/land-110m.json',
     '/docs/globe/data/land-110m.json',
     window.location.origin + '/docs/globe/data/land-110m.json',
     'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json'
@@ -98,6 +100,7 @@ async function loadData(){
 
   const rows = await fetchWithFallback([
     '../globe/data/countries.json',
+    '/globe/data/countries.json',
     '/docs/globe/data/countries.json',
     window.location.origin + '/docs/globe/data/countries.json',
     'https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json',
