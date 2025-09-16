@@ -78,7 +78,19 @@ canvas.addEventListener('mousemove', ev=>{
 canvas.addEventListener('click', ev=>{ if(ev.button!==0) return; const rect=canvas.getBoundingClientRect(); const x=(ev.clientX-rect.left)*DPR, y=(ev.clientY-rect.top)*DPR; const lonlat=projection.invert([x,y]); if(!lonlat) return; const f=features.find(ft=>d3.geoContains(ft,lonlat)); selected=f||null; needsRender=true; });
 
 async function loadData(){
-  async function fetchWithFallback(urls){ let last; for(const u of urls){ try{ const r=await fetch(u,{cache:'force-cache'}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }catch(e){ last=e; } } throw last||new Error('모든 소스에서 로드 실패'); }
+  async function fetchWithFallback(urls){
+  const DEV = /localhost|127\.0\.0\.1/.test(window.location.hostname);
+  let last;
+  for(const u of urls){
+    try{
+      const ver = DEV ? (u + (u.includes("?")?"&":"?") + "v="+Date.now()) : u;
+      const r = await fetch(ver, { cache: DEV ? "no-store" : "force-cache" });
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return await r.json();
+    }catch(e){ last=e; }
+  }
+  throw last || new Error("모든 소스에서 로드 실패");
+}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }catch(e){ last=e; } } throw last||new Error('모든 소스에서 로드 실패'); }
   const topo = await fetchWithFallback([
     '../globe/data/countries-110m.json',
     '/globe/data/countries-110m.json',
@@ -124,4 +136,5 @@ async function loadData(){
 
 setHud('데이터 불러오는 중...');
 loadData().catch(err=>{ console.error(err); setHud('데이터 로드 실패: docs/globe/data/ 확인 또는 네트워크 확인'); });
+
 
