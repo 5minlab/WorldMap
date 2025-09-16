@@ -66,11 +66,85 @@ canvas.addEventListener('click', ev=>{ if(ev.button!==0) return; const rect=canv
 
 async function fetchWithFallback(urls){ const DEV=/localhost|127\.0\.0\.1/.test(window.location.hostname); let last; for(const u of urls){ try{ const ver= DEV ? (u+(u.includes('?')?'&':'?')+'v='+Date.now()) : u; const r=await fetch(ver,{ cache: DEV?'no-store':'force-cache' }); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }catch(e){ last=e; } } throw last||new Error('모든 소스에서 로드 실패'); }
 
-async function loadData(){ const st={boundary:false, land:false, capitals:false};
-  try{ const topo=await fetchWithFallback(['../globe/data/countries-110m.json','/globe/data/countries-110m.json','/docs/globe/data/countries-110m.json', window.location.origin+'/docs/globe/data/countries-110m.json', 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json']); if(topo?.objects?.countries){ features=topojson.feature(topo, topo.objects.countries).features; boundaryMesh=topojson.mesh(topo, topo.objects.countries,(a,b)=>a!==b);} else if(Array.isArray(topo?.features)){ features=topo.features; boundaryMesh=null; } else { throw new Error('countries data not found'); } st.boundary=true; }catch(e){ console.error(e); st.boundary=false; }
-  try{ const landTopo=await fetchWithFallback(['../globe/data/land-110m.json','/globe/data/land-110m.json','/docs/globe/data/land-110m.json', window.location.origin+'/docs/globe/data/land-110m.json', 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json']); if(landTopo?.objects?.land){ landGeom=topojson.feature(landTopo, landTopo.objects.land);} else if(landTopo?.type==='FeatureCollection'){ landGeom=landTopo; } st.land=!!landGeom; }catch(e){ console.error(e); st.land=false; }
-  try{ const rows=await fetchWithFallback(['../globe/data/countries.json','/globe/data/countries.json','/docs/globe/data/countries.json', window.location.origin+'/docs/globe/data/countries.json', 'https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json','https://raw.githubusercontent.com/mledoze/countries/master/countries.json']); capitals=[]; nameByCcn3.clear(); capByCcn3.clear(); rows.forEach(row=>{ const ccn3=row.ccn3||''; if(!ccn3) return; const id3=String(ccn3).padStart(3,'0'); const nameKo=(row.translations&&row.translations.kor&&(row.translations.kor.common||row.translations.kor.official))||(row.name&&row.name.nativeName&&row.name.nativeName.kor&&row.name.nativeName.kor.common)||''; const name=nameKo||row.name?.common||row.name?.official||''; if(name) nameByCcn3.set(id3,name); const capName=Array.isArray(row.capital)?row.capital[0]:row.capital; const ll=row.capitalInfo&&Array.isArray(row.capitalInfo.latlng)?row.capitalInfo.latlng:null; if(capName&&ll&&ll.length===2){ const cap={name,capital:capName,ccn3:id3,lat:+ll[0],lon:+ll[1]}; capitals.push(cap); capByCcn3.set(id3,cap);} }); st.capitals=capitals.length>0; }catch(e){ console.error(e); st.capitals=false; }
-  renderStatus(st); resizeCanvas(); needsRender=true; setHud('좌클릭: 국가 선택 · 휠: 확대/축소'); }
+async function loadData(){
+  const st={boundary:false, land:false, capitals:false};
+  // 1) Countries (boundaries) — and build N3->ISO3 map
+  const iso3ByN3=new Map();
+  try{
+    const topo=await fetchWithFallback([
+      '../globe/data/countries-110m.json','/globe/data/countries-110m.json',
+      '/docs/globe/data/countries-110m.json', window.location.origin+'/docs/globe/data/countries-110m.json',
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+    ]);
+    if(topo?.objects?.countries){
+      features=topojson.feature(topo, topo.objects.countries).features;
+      boundaryMesh=topojson.mesh(topo, topo.objects.countries,(a,b)=>a!==b);
+    }else if(Array.isArray(topo?.features)){
+      features=topo.features; boundaryMesh=null;
+    }else{ throw new Error('countries data not found'); }
+    // build map
+    features.forEach(f=>{ const n3=String(f.id||'').padStart(3,'0'); const iso3=f.properties?.iso_a3||f.properties?.ISO_A3||f.properties?.adm0_a3||''; if(n3&&iso3) iso3ByN3.set(n3, iso3); });
+    st.boundary=true;
+  }catch(e){ console.error(e); st.boundary=false; }
+
+  // 2) Land (coastline)
+  try{
+    const landTopo=await fetchWithFallback([
+      '../globe/data/land-110m.json','/globe/data/land-110m.json',
+      '/docs/globe/data/land-110m.json', window.location.origin+'/docs/globe/data/land-110m.json',
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json'
+    ]);
+    if(landTopo?.objects?.land){ landGeom=topojson.feature(landTopo, landTopo.objects.land); }
+    else if(landTopo?.type==='FeatureCollection'){ landGeom=landTopo; }
+    st.land=!!landGeom;
+  }catch(e){ console.error(e); st.land=false; }
+
+  // 3) Natural Earth capitals (admin-0)
+  let neCaps=new Map();
+  try{
+    const ne=await fetchWithFallback([
+      '../globe/data/ne_110m_populated_places_simple.geojson',
+      '/globe/data/ne_110m_populated_places_simple.geojson',
+      '/docs/globe/data/ne_110m_populated_places_simple.geojson',
+      window.location.origin + '/docs/globe/data/ne_110m_populated_places_simple.geojson',
+      'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_populated_places_simple.geojson',
+      'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_populated_places_simple.geojson'
+    ]);
+    if(ne && Array.isArray(ne.features)){
+      const map=new Map();
+      ne.features.forEach(f=>{ const p=f.properties||{}; const cls=(p.featurecla||p.featureclass||'').toLowerCase(); if(cls.includes('capital')){ const iso3=p.adm0_a3||p.iso_a3||p.sov_a3||''; const g=f.geometry; if(iso3&&g&&g.type==='Point'&&Array.isArray(g.coordinates)&&g.coordinates.length===2){ const lon=+g.coordinates[0], lat=+g.coordinates[1]; const nm=p.name||p.nameascii||p.namealt||''; if(!map.has(iso3)) map.set(iso3,{name:nm, lat, lon}); } } });
+      neCaps=map;
+    }
+  }catch(e){ console.warn('Natural Earth capitals load failed', e); }
+
+  // 4) Countries/Capitals (mledoze) and merge
+  try{
+    const rows=await fetchWithFallback([
+      '../globe/data/countries.json','/globe/data/countries.json',
+      '/docs/globe/data/countries.json', window.location.origin+'/docs/globe/data/countries.json',
+      'https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json',
+      'https://raw.githubusercontent.com/mledoze/countries/master/countries.json'
+    ]);
+    capitals=[]; nameByCcn3.clear(); capByCcn3.clear();
+    rows.forEach(row=>{
+      const ccn3=row.ccn3||''; if(!ccn3) return; const id3=String(ccn3).padStart(3,'0');
+      const iso3=row.cca3 || iso3ByN3.get(id3) || '';
+      const nameKo=(row.translations&&row.translations.kor&&(row.translations.kor.common||row.translations.kor.official))||(row.name&&row.name.nativeName&&row.name.nativeName.kor&&row.name.nativeName.kor.common)||'';
+      const name=nameKo||row.name?.common||row.name?.official||''; if(name) nameByCcn3.set(id3,name);
+      let capName=Array.isArray(row.capital)?row.capital[0]:row.capital;
+      const capInfo=(row.capitalInfo&&Array.isArray(row.capitalInfo.latlng))?row.capitalInfo.latlng:null;
+      const countryCenter=(row.latlng&&Array.isArray(row.latlng)&&row.latlng.length===2)?row.latlng:null;
+      let ll=null;
+      if(capInfo) ll=capInfo;
+      else if(iso3 && neCaps.has(iso3)) { const nc=neCaps.get(iso3); ll=[nc.lat, nc.lon]; capName=capName||nc.name; }
+      else if(capName && countryCenter) ll=countryCenter;
+      if(ll && ll.length===2){ const cap={ name, capital: capName||name, ccn3:id3, lat:+ll[0], lon:+ll[1] }; capitals.push(cap); capByCcn3.set(id3,cap); }
+    });
+    st.capitals=capitals.length>0;
+  }catch(e){ console.error(e); st.capitals=false; }
+
+  renderStatus(st); resizeCanvas(); needsRender=true; setHud('좌클릭: 국가 선택 · 휠: 확대/축소');
+}
 
 setHud('데이터 불러오는 중...');
 loadData().catch(err=>{ console.error(err); setHud('데이터 로드 실패: docs/globe/data/ 확인 또는 네트워크 확인'); });
